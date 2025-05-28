@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Jogo - Quina</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .numbers {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 400px;
+    }
+    .numbers label {
+      width: 40px;
+      margin: 2px;
+      text-align: center;
+    }
+    table {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 6px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Jogo - Quina</h1>
+
+  <form id="dezenasForm">
+    <p>Escolha 20 dezenas (01 a 80):</p>
+    <div class="numbers" id="checkboxContainer"></div>
+    <button type="submit">Sortear 5 dezenas</button>
+  </form>
+
+  <table id="resultadoTabela">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Dezenas Sorteadas</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const container = document.getElementById('checkboxContainer');
+
+    // Cria os checkboxes de 1 a 80
+    for (let i = 1; i <= 80; i++) {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = i.toString().padStart(2, '0');
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(checkbox.value));
+      container.appendChild(label);
+    }
+
+    // Lida com a submissão do formulário
+    document.getElementById('dezenasForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const selecionadas = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+
+      if (selecionadas.length !== 20) {
+        alert('Você deve selecionar exatamente 20 dezenas.');
+        return;
+      }
+
+      // Embaralha e escolhe 5 dezenas das 20 selecionadas
+      const sorteadas = selecionadas.sort(() => 0.5 - Math.random()).slice(0, 5).sort();
+
+      // Adiciona o resultado à tabela
+      const tbody = document.querySelector('#resultadoTabela tbody');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${tbody.children.length + 1}</td>
+        <td>${sorteadas.join(', ')}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  </script>
+</body>
+</html>
