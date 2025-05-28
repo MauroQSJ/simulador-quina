@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulador Quina Avançado</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      color: #90caf9;
+    }
+    .numbers {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 600px;
+    }
+    .numbers label {
+      width: 44px;
+      margin: 2px;
+      text-align: center;
+      cursor: pointer;
+    }
+    table {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 100%;
+      background-color: #1e1e1e;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 6px;
+      text-align: center;
+    }
+    .buttons {
+      margin-top: 20px;
+    }
+    .buttons button {
+      margin: 5px;
+      padding: 10px 15px;
+      background-color: #1976d2;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .buttons button:hover {
+      background-color: #1565c0;
+    }
+    #frequencia {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Jogo - Quina</h1>
+
+  <form id="dezenasForm">
+    <p>Escolha 20 dezenas (01 a 80):</p>
+    <div class="numbers" id="checkboxContainer"></div>
+    <button type="submit">Sortear 5 dezenas</button>
+  </form>
+
+  <div class="buttons">
+    <button onclick="salvarExcel()">Exportar Excel</button>
+    <button onclick="salvarPDF()">Exportar PDF</button>
+    <button onclick="limparTabela()">Limpar Tabela</button>
+    <button onclick="simularVarios()">Simular 10 Jogos</button>
+  </div>
+
+  <table id="resultadoTabela">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Dezenas Sorteadas</th>
+        <th>Somatória</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="frequencia"></div>
+
+  <script>
+    const container = document.getElementById('checkboxContainer');
+    const freq = {};
+
+    // Cria os checkboxes de 1 a 80
+    for (let i = 1; i <= 80; i++) {
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = i.toString().padStart(2, '0');
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(checkbox.value));
+      container.appendChild(label);
+      freq[checkbox.value] = 0;
+    }
+
+    document.getElementById('dezenasForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      realizarSorteio();
+    });
+
+    function realizarSorteio() {
+      const selecionadas = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+
+      if (selecionadas.length !== 20) {
+        alert('Você deve selecionar exatamente 20 dezenas.');
+        return;
+      }
+
+      const sorteadas = selecionadas.sort(() => 0.5 - Math.random()).slice(0, 5);
+      const numeros = sorteadas.map(n => parseInt(n));
+      const soma = numeros.reduce((a, b) => a + b, 0);
+
+      sorteadas.forEach(d => freq[d]++);
+
+      const tbody = document.querySelector('#resultadoTabela tbody');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${tbody.children.length + 1}</td>
+        <td>${sorteadas.sort().join(', ')}</td>
+        <td>${soma}</td>
+      `;
+      tbody.appendChild(row);
+      atualizarFrequencia();
+    }
+
+    function atualizarFrequencia() {
+      const div = document.getElementById('frequencia');
+      let html = '<h3>Frequência das Dezenas</h3><ul>';
+      for (const [dezena, contagem] of Object.entries(freq)) {
+        if (contagem > 0) html += `<li>${dezena}: ${contagem}x</li>`;
+      }
+      html += '</ul>';
+      div.innerHTML = html;
+    }
+
+    function limparTabela() {
+      document.querySelector('#resultadoTabela tbody').innerHTML = '';
+      for (const dezena in freq) freq[dezena] = 0;
+      atualizarFrequencia();
+    }
+
+    function simularVarios() {
+      for (let i = 0; i < 10; i++) {
+        realizarSorteio();
+      }
+    }
+
+    function salvarExcel() {
+      const tabela = document.getElementById("resultadoTabela");
+      const wb = XLSX.utils.table_to_book(tabela, { sheet: "Resultados" });
+      XLSX.writeFile(wb, "resultado-quina.xlsx");
+    }
+
+    async function salvarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Resultados do Jogo - Quina", 10, 10);
+
+      const tabela = document.getElementById("resultadoTabela");
+      let y = 20;
+      for (let row of tabela.rows) {
+        let text = Array.from(row.cells).map(cell => cell.textContent).join(" | ");
+        doc.text(text, 10, y);
+        y += 10;
+      }
+
+      doc.save("resultado-quina.pdf");
+    }
+  </script>
+</body>
+</html>
